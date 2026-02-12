@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Нейросеть — Наталья Александровна</title>
+
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #1f1f1f;
+        color: #e6e6e6;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+    }
+
+    header {
+        padding: 15px;
+        background: #2a2a2a;
+        text-align: center;
+        font-size: 18px;
+        border-bottom: 1px solid #333;
+    }
+
+    #chat {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+    }
+
+    .msg {
+        margin-bottom: 15px;
+        padding: 12px;
+        border-radius: 10px;
+        max-width: 80%;
+        line-height: 1.4;
+    }
+
+    .user {
+        background: #3a3a3a;
+        margin-left: auto;
+    }
+
+    .bot {
+        background: #2c2c2c;
+        border: 1px solid #444;
+    }
+
+    .input-area {
+        display: flex;
+        padding: 15px;
+        background: #2a2a2a;
+        border-top: 1px solid #333;
+    }
+
+    input {
+        flex: 1;
+        padding: 12px;
+        background: #1a1a1a;
+        border: 1px solid #444;
+        color: white;
+        border-radius: 8px;
+        outline: none;
+        font-size: 15px;
+    }
+
+    button {
+        margin-left: 10px;
+        padding: 12px 18px;
+        background: #444;
+        border: none;
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 15px;
+    }
+
+    button:hover {
+        background: #555;
+    }
+</style>
+</head>
+<body>
+
+<header>Нейросеть — Наталья Александровна</header>
+
+<div id="chat"></div>
+
+<div class="input-area">
+    <input id="input" placeholder="Напиши что-нибудь..." />
+    <button onclick="sendMessage()">Отправить</button>
+</div>
+
+<script>
+const API_KEY = "sk-80dc0dd004624a60aa6c823a34ce285b"; // ← вставь ключ
+const API_URL = "https://api.deepseek.com/v1/chat/completions";
+
+const systemPrompt = `
+Представь что ты злая училка, зовут тебя Наталья Александровна.
+Ты учитель математики 56 лицея.
+Ты строгая, язвительная, саркастичная.
+Отвечаешь как строгая математичка.
+`;
+
+const chatDiv = document.getElementById("chat");
+
+function addMessage(text, cls) {
+    const div = document.createElement("div");
+    div.className = "msg " + cls;
+    div.textContent = text;
+    chatDiv.appendChild(div);
+    chatDiv.scrollTop = chatDiv.scrollHeight;
+}
+
+async function sendMessage() {
+    const input = document.getElementById("input");
+    const text = input.value.trim();
+    if (!text) return;
+
+    addMessage(text, "user");
+    input.value = "";
+
+    addMessage("Печатает...", "bot");
+
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + API_KEY
+            },
+            body: JSON.stringify({
+                model: "deepseek-chat",
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: text }
+                ]
+            })
+        });
+
+        const data = await response.json();
+
+        // удалить "печатает..."
+        chatDiv.removeChild(chatDiv.lastChild);
+
+        const reply = data.choices[0].message.content;
+        addMessage(reply, "bot");
+
+    } catch (err) {
+        chatDiv.removeChild(chatDiv.lastChild);
+        addMessage("Ошибка подключения к API", "bot");
+        console.error(err);
+    }
+}
+
+// Enter для отправки
+document.getElementById("input").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") sendMessage();
+});
+</script>
+
+</body>
+</html>
